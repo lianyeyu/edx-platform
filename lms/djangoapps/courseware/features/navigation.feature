@@ -18,4 +18,4 @@ Feature: LMS.Navigate Course
         Given I am viewing a section with multiple sequences
         When I navigate to an item in a sequence
         Then I see the content of the sequence item
-        And a "seq_goto" browser event is emitted
+        And an "edx.ui.lms.sequence.tab_selected" browser event is emitted
