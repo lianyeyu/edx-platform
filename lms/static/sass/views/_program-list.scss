@@ -17,6 +17,11 @@ $pl-button-color: #0079bc;
   @include span-columns(12);
 }
 .sidebar{
+    float: right !important;
+    margin-bottom: $baseline;
+  .certificate-container{
+    @include xseries-certificate-container();
+  }
   @include outer-container;
   @include span-columns(12);
   .program-advertise{
