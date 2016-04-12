@@ -197,14 +197,12 @@ def inline_discussion(request, course_key, discussion_id):
     user_info = cc_user.to_dict()
 
     try:
-        threads, query_params = get_threads(request, course, discussion_id, per_page=INLINE_THREADS_PER_PAGE)
+        threads, query_params = get_inline_discussion_threads(request, course_key, course, discussion_id)
     except ValueError:
         return HttpResponseBadRequest("Invalid group_id")
 
     with newrelic.agent.FunctionTrace(nr_transaction, "get_metadata_for_threads"):
         annotated_content_info = utils.get_metadata_for_threads(course_key, threads, request.user, user_info)
-    is_staff = has_permission(request.user, 'openclose_thread', course.id)
-    threads = [utils.prepare_content(thread, course_key, is_staff) for thread in threads]
     with newrelic.agent.FunctionTrace(nr_transaction, "add_courseware_context"):
         add_courseware_context(threads, course, request.user)
     return utils.JsonResponse({
@@ -217,6 +215,32 @@ def inline_discussion(request, course_key, discussion_id):
         'roles': utils.get_role_ids(course_key),
         'course_settings': make_course_settings(course, request.user)
     })
+
+
+@login_required
+@use_bulk_ops
+def inline_discussion_threads(request, course_key, discussion_id):
+    """
+    Returns list of thread_ids for discussion
+    """
+    course = get_course_with_access(request.user, 'load', course_key, check_if_enrolled=True)
+    try:
+        threads, query_params = get_inline_discussion_threads(request, course_key, course, discussion_id)
+    except ValueError:
+        return HttpResponseBadRequest("Invalid group_id")
+    return utils.JsonResponse({
+        'thread_ids': [thread['id'] for thread in threads],
+        'page': query_params['page'],
+        'num_pages': query_params['num_pages'],
+    })
+
+
+def get_inline_discussion_threads(request, course_key, course, discussion_id):
+    """ Get threads list for inline discussion """
+    threads, query_params = get_threads(request, course, discussion_id, per_page=INLINE_THREADS_PER_PAGE)
+    is_staff = has_permission(request.user, 'openclose_thread', course.id)
+    threads = [utils.prepare_content(thread, course_key, is_staff) for thread in threads]
+    return threads, query_params
 
 
 @login_required

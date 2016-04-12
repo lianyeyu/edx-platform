@@ -203,10 +203,14 @@ class TestBlocksView(EnableTransformerRegistryMixin, SharedModuleStoreTestCase):
             )
 
     def test_student_view_data_param(self):
-        response = self.verify_response(params={'student_view_data': ['video', 'chapter']})
+        response = self.verify_response(params={'student_view_data': ['video', 'chapter', 'discussion']})
         self.verify_response_block_dict(response)
         for block_data in response.data['blocks'].itervalues():
-            self.assert_in_iff('student_view_data', block_data, block_data['type'] == 'video')
+            self.assert_in_iff(
+                'student_view_data',
+                block_data,
+                block_data['type'] == 'video' or block_data['type'] == 'discussion'
+            )
 
     def test_navigation_param(self):
         response = self.verify_response(params={'nav_depth': 10})

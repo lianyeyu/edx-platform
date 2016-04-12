@@ -150,7 +150,7 @@ def make_mock_thread_data(
 def make_mock_request_impl(
         course,
         text,
-        thread_id="dummy_thread_id",
+        thread_ids=["dummy_thread_id"],
         group_id=None,
         commentable_id=None,
         num_thread_responses=1,
@@ -168,14 +168,14 @@ def make_mock_request_impl(
                         num_children=None,
                         group_id=group_id,
                         commentable_id=commentable_id,
-                    )
+                    ) for thread_id in thread_ids
                 ]
             }
-        elif thread_id and url.endswith(thread_id):
+        elif thread_ids and url.endswith(thread_ids[0]):
             data = make_mock_thread_data(
                 course=course,
                 text=text,
-                thread_id=thread_id,
+                thread_id=thread_ids[0],
                 num_children=num_thread_responses,
                 group_id=group_id,
                 commentable_id=commentable_id
@@ -230,7 +230,7 @@ class SingleThreadTestCase(ModuleStoreTestCase):
     def test_ajax(self, mock_request):
         text = "dummy content"
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_ids=[thread_id])
 
         request = RequestFactory().get(
             "dummy_url",
@@ -266,7 +266,7 @@ class SingleThreadTestCase(ModuleStoreTestCase):
         thread_id = "test_thread_id"
         response_skip = "45"
         response_limit = "15"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_ids=[thread_id])
 
         request = RequestFactory().get(
             "dummy_url",
@@ -317,7 +317,7 @@ class SingleThreadTestCase(ModuleStoreTestCase):
         request = RequestFactory().get("dummy_url")
         request.user = self.student
         # Mock request to return 404 for thread request
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy", thread_id=None)
+        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy", thread_ids=None)
         self.assertRaises(
             Http404,
             views.single_thread,
@@ -364,7 +364,7 @@ class SingleThreadQueryCountTestCase(ModuleStoreTestCase):
 
         test_thread_id = "test_thread_id"
         mock_request.side_effect = make_mock_request_impl(
-            course=course, text="dummy content", thread_id=test_thread_id, num_thread_responses=num_thread_responses
+            course=course, text="dummy content", thread_ids=[test_thread_id], num_thread_responses=num_thread_responses
         )
         request = RequestFactory().get(
             "dummy_url",
@@ -402,7 +402,7 @@ class SingleCohortedThreadTestCase(CohortedTestCase):
         self.mock_text = "dummy content"
         self.mock_thread_id = "test_thread_id"
         mock_request.side_effect = make_mock_request_impl(
-            course=self.course, text=self.mock_text, thread_id=self.mock_thread_id, group_id=self.student_cohort.id
+            course=self.course, text=self.mock_text, thread_ids=[self.mock_thread_id], group_id=self.student_cohort.id
         )
 
     def test_ajax(self, mock_request):
@@ -460,7 +460,7 @@ class SingleThreadAccessTestCase(CohortedTestCase):
     def call_view(self, mock_request, commentable_id, user, group_id, thread_group_id=None, pass_group_id=True):
         thread_id = "test_thread_id"
         mock_request.side_effect = make_mock_request_impl(
-            course=self.course, text="dummy context", thread_id=thread_id, group_id=thread_group_id
+            course=self.course, text="dummy context", thread_ids=[thread_id], group_id=thread_group_id
         )
 
         request_data = {}
@@ -626,7 +626,9 @@ class SingleThreadContentGroupTestCase(ContentGroupTestCase):
         beta, and global discussion modules.
         """
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy content", thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(
+            course=self.course, text="dummy content", thread_ids=[thread_id]
+        )
 
         for discussion_module in [self.alpha_module, self.beta_module, self.global_module]:
             self.assert_can_access(self.staff_user, discussion_module.discussion_id, thread_id, True)
@@ -637,7 +639,9 @@ class SingleThreadContentGroupTestCase(ContentGroupTestCase):
         global discussion modules.
         """
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy content", thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(
+            course=self.course, text="dummy content", thread_ids=[thread_id]
+        )
 
         for discussion_module in [self.alpha_module, self.global_module]:
             self.assert_can_access(self.alpha_user, discussion_module.discussion_id, thread_id, True)
@@ -650,7 +654,9 @@ class SingleThreadContentGroupTestCase(ContentGroupTestCase):
         global discussion modules.
         """
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy content", thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(
+            course=self.course, text="dummy content", thread_ids=[thread_id]
+        )
 
         for discussion_module in [self.beta_module, self.global_module]:
             self.assert_can_access(self.beta_user, discussion_module.discussion_id, thread_id, True)
@@ -663,7 +669,9 @@ class SingleThreadContentGroupTestCase(ContentGroupTestCase):
         global discussion module.
         """
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy content", thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(
+            course=self.course, text="dummy content", thread_ids=[thread_id]
+        )
 
         self.assert_can_access(self.non_cohorted_user, self.global_module.discussion_id, thread_id, True)
 
@@ -677,7 +685,7 @@ class SingleThreadContentGroupTestCase(ContentGroupTestCase):
         """
         thread_id = "test_thread_id"
         mock_request.side_effect = make_mock_request_impl(
-            course=self.course, text="dummy content", thread_id=thread_id
+            course=self.course, text="dummy content", thread_ids=[thread_id]
         )
 
         # Beta user does not have access to alpha_module.
@@ -697,7 +705,7 @@ class SingleThreadContentGroupTestCase(ContentGroupTestCase):
             discussion_topic_id=self.alpha_module.discussion_id
         )
         mock_request.side_effect = make_mock_request_impl(
-            course=self.course, text="dummy content", thread_id=thread_id,
+            course=self.course, text="dummy content", thread_ids=[thread_id],
             commentable_id=self.alpha_module.discussion_id
         )
 
@@ -1120,7 +1128,7 @@ class UserProfileTestCase(ModuleStoreTestCase):
 
     def get_response(self, mock_request, params, **headers):
         mock_request.side_effect = make_mock_request_impl(
-            course=self.course, text=self.TEST_THREAD_TEXT, thread_id=self.TEST_THREAD_ID
+            course=self.course, text=self.TEST_THREAD_TEXT, thread_ids=[self.TEST_THREAD_ID]
         )
         request = RequestFactory().get("dummy_url", data=params, **headers)
         request.user = self.student
@@ -1209,7 +1217,7 @@ class UserProfileTestCase(ModuleStoreTestCase):
 
     def test_post(self, mock_request):
         mock_request.side_effect = make_mock_request_impl(
-            course=self.course, text=self.TEST_THREAD_TEXT, thread_id=self.TEST_THREAD_ID
+            course=self.course, text=self.TEST_THREAD_TEXT, thread_ids=[self.TEST_THREAD_ID]
         )
         request = RequestFactory().post("dummy_url")
         request.user = self.student
@@ -1255,7 +1263,7 @@ class CommentsServiceRequestHeadersTestCase(UrlResetMixin, ModuleStoreTestCase):
         lang = "eo"
         text = "dummy content"
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_ids=[thread_id])
 
         self.client.get(
             reverse(
@@ -1272,7 +1280,7 @@ class CommentsServiceRequestHeadersTestCase(UrlResetMixin, ModuleStoreTestCase):
 
     @override_settings(COMMENTS_SERVICE_KEY="test_api_key")
     def test_api_key(self, mock_request):
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy", thread_id="dummy")
+        mock_request.side_effect = make_mock_request_impl(course=self.course, text="dummy", thread_ids=["dummy"])
 
         self.client.get(
             reverse(
@@ -1442,7 +1450,7 @@ class SingleThreadUnicodeTestCase(SharedModuleStoreTestCase, UnicodeTestMixin):
     @patch('lms.lib.comment_client.utils.requests.request', autospec=True)
     def _test_unicode_data(self, text, mock_request):
         thread_id = "test_thread_id"
-        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_id=thread_id)
+        mock_request.side_effect = make_mock_request_impl(course=self.course, text=text, thread_ids=[thread_id])
         request = RequestFactory().get("dummy_url")
         request.user = self.student
         request.META["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"  # so request.is_ajax() == True
@@ -1532,3 +1540,26 @@ class EnrollmentTestCase(ModuleStoreTestCase):
         request.user = self.student
         with self.assertRaises(UserNotEnrolled):
             views.forum_form_discussion(request, course_id=self.course.id.to_deprecated_string())
+
+
+@patch('lms.lib.comment_client.utils.requests.request', autospec=True)
+class InlineDiscussionThreadsTestCase(ModuleStoreTestCase):
+    """
+    Tests for Inline Discussion thread IDs retrieval
+    """
+    def setUp(self):
+        super(InlineDiscussionThreadsTestCase, self).setUp()
+        self.course = CourseFactory.create()
+        CourseEnrollmentFactory(user=self.user, course_id=self.course.id)
+        self.discussion_topic_id = "dummy_topic"
+
+    def test_thread_list(self, mock_request):
+        thread_ids = ["dummy_thread_1", "dummy_thread_2", "dummy_thread_3"]
+        mock_request.side_effect = make_mock_request_impl(
+            course=self.course, text="dummy text", commentable_id=self.discussion_topic_id, thread_ids=thread_ids,
+        )
+        request = RequestFactory().get("dummy_url")
+        request.user = self.user
+
+        response = views.inline_discussion_threads(request, unicode(self.course.id), self.discussion_topic_id)
+        self.assertEqual(thread_ids, json.loads(response.content)['thread_ids'])
