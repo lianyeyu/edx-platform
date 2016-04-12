@@ -320,9 +320,6 @@
                 var button = this.languageChooserEl,
                     menu = button.parent().find('.menu');
 
-
-                this.state.el.trigger('language_menu:show');
-
                 button
                     .addClass('is-opened');
 
@@ -335,8 +332,6 @@
                 event.preventDefault();
 
                 var button = this.languageChooserEl;
-
-                this.state.el.trigger('language_menu:hide');
 
                 button
                     .removeClass('is-opened')
@@ -376,6 +371,10 @@
             onContainerMouseEnter: function (event) {
                 event.preventDefault();
                 $(event.currentTarget).find('.lang').addClass('is-opened');
+
+                // We only want to fire the analytics event if a menu is
+                // present instead of on the container hover, since it wraps
+                // the "CC" and "Transcript" buttons as well.
                 if ($(event.currentTarget).find('.lang').length) {
                     this.state.el.trigger('language_menu:show');
                 }
@@ -389,6 +388,10 @@
             onContainerMouseLeave: function (event) {
                 event.preventDefault();
                 $(event.currentTarget).find('.lang').removeClass('is-opened');
+
+                // We only want to fire the analytics event if a menu is
+                // present instead of on the container hover, since it wraps
+                // the "CC" and "Transcript" buttons as well.
                 if ($(event.currentTarget).find('.lang').length) {
                     this.state.el.trigger('language_menu:hide');
                 }
@@ -664,7 +667,6 @@
                 });
 
                 this.languageChooserEl.append(menu);
-                // event: video_show_cc_menu, video_hide_cc_menu
 
                 menu.on('click', '.control-lang', function (e) {
                     var el = $(e.currentTarget).parent(),
@@ -1117,6 +1119,9 @@
                     .find('.control-text')
                         .text(gettext('Hide closed captions'));
 
+                // trigger an analytics event
+                this.state.el.trigger('captions:show');
+
                 if (this.subtitlesEl.find('.current').text()) {
                     this.captionDisplayEl
                         .text(this.subtitlesEl.find('.current').text());
@@ -1137,6 +1142,9 @@
                     .removeClass('is-active')
                     .find('.control-text')
                         .text(gettext('Turn on closed captioning'));
+
+                // trigger an analytics event
+                this.state.el.trigger('captions:hide');
             },
 
             updateCaptioningCookie: function(method) {
@@ -1173,7 +1181,7 @@
                     state.el.addClass('closed');
                     text = gettext('Turn on transcripts');
                     if (trigger_event) {
-                        this.state.el.trigger('captions:hide');
+                        this.state.el.trigger('transcript:hide');
                     }
 
                     transcriptControlEl
@@ -1186,7 +1194,7 @@
                     this.scrollCaption();
                     text = gettext('Turn off transcripts');
                     if (trigger_event) {
-                        this.state.el.trigger('captions:show');
+                        this.state.el.trigger('transcript:show');
                     }
 
                     transcriptControlEl
