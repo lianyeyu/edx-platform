@@ -2,16 +2,20 @@
 import logging
 
 from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse_lazy, reverse
-from django.shortcuts import redirect
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect, render
+from django.template import RequestContext
 from django.utils.translation import ugettext as _
+from django.views.decorators.cache import never_cache
 from django.views.generic import View
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import CreateView
 from edxmako.shortcuts import render_to_response
 
-from openedx.core.djangoapps.api_admin.forms import ApiAccessRequestForm
+from openedx.core.djangoapps.api_admin.forms import ApiAccessRequestForm, CatalogForm
 from openedx.core.djangoapps.api_admin.models import ApiAccessRequest
 
 log = logging.getLogger(__name__)
@@ -60,3 +64,60 @@ class ApiTosView(TemplateView):
     """View to show the API Terms of Service."""
 
     template_name = 'api_admin/terms_of_service.html'
+
+
+@never_cache
+@staff_member_required
+def catalog_changelist(request):
+    # TODO: get catalogs
+    catalogs = [
+        {
+            'id': '1',
+            'name': 'test1',
+            'query': '*'
+        }
+    ]
+    return render(
+        RequestContext(request),
+        'api_admin/catalog_changelist.html',
+        {
+            'catalogs': catalogs,
+        }
+    )
+
+
+@never_cache
+@staff_member_required
+def catalog_changeform(request, id=None):
+    if request.method == 'POST':
+        form = CatalogForm(request.POST)
+        change = False
+        if form.is_valid():
+            if id is None:
+                pass  # create new catalog
+            else:
+                change = True
+                # update catalog
+            return HttpResponseRedirect('..')
+    else:
+        if id is None:  # Create new catalog
+            change = False
+            form = CatalogForm()
+        else:  # Update existing catalog
+            change = True
+            catalog = {
+                'id': '2',
+                'name': 'test2',
+                'query': 'test*'
+            }  # Get catalogs
+
+            form = CatalogForm(catalog)
+            # del form.fields['hidden_field']
+    return render(
+        RequestContext(request),
+        'api_admin/catalog_changeform.html',
+        {
+            'change': change,
+            'form': form,
+        }
+    )
